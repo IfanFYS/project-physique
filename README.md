@@ -1,6 +1,8 @@
 # Project Physique 💪
 
-A comprehensive fitness tracking app built with Flutter, designed to help you monitor your workouts, track body measurements, log sleep, and visualize your progress over time.
+A personal fitness tracking app built with Flutter to monitor workouts, track body measurements, log sleep, and visualize progress over time.
+
+**Note:** This is a personal project built for my own fitness journey. Feel free to use or modify it for your own needs!
 
 ## Features
 
@@ -15,17 +17,16 @@ A comprehensive fitness tracking app built with Flutter, designed to help you mo
 
 ### 🏋️ Exercise Management
 - **Workout Plans**: Create and manage multiple workout routines
-- **CRUD Operations**: Full control to Create, Read, Update, Delete workouts
-- **Operator Protocol**: Pre-loaded with the 5-day "Operator Protocol" workout plan
+- **Full CRUD**: Create, Read, Update, Delete workouts and exercises
+- **Operator Protocol**: Pre-loaded with my 5-day workout plan
   - Heavy Push
   - Heavy Pull
   - Glow Up
   - Chest Hypertrophy
   - Volume
-- **Exercise Editor**: Modify exercises, sets, weights, and details
 
 ### 📊 Progress Tracking
-- **Interactive Charts**: Visualize your progress with fl_chart
+- **Interactive Charts**: Visualize progress with fl_chart
   - Weight progression
   - Calorie intake
   - Workout frequency
@@ -34,12 +35,11 @@ A comprehensive fitness tracking app built with Flutter, designed to help you mo
 
 ### 📸 Gallery
 - **Progress Photos**: Take daily photos to track visual changes
-- **Photo Timeline**: Browse through your transformation journey
-- **Measurements Overlay**: View stats for each photo date
+- **Photo Timeline**: Browse through transformation journey
 
 ### 😴 Sleep Mode
 - **Sleep Tracking**: Activate sleep mode to track rest duration
-- **Testing Mode**: Debug feature to simulate different dates and sleep values
+- **Testing Mode**: Debug feature to simulate different dates and sleep values (🐛 icon in app bar)
 
 ## Tech Stack
 
@@ -47,15 +47,13 @@ A comprehensive fitness tracking app built with Flutter, designed to help you mo
 - **State Management**: Riverpod with code generation
 - **Database**: Hive (local NoSQL database)
 - **Charts**: fl_chart
-- **Notifications**: flutter_local_notifications
 
 ## Installation
 
 ### Prerequisites
 - Flutter SDK (3.0 or higher)
 - Dart SDK
-- Android Studio / Xcode (for mobile)
-- Chrome/Edge (for web)
+- Android Studio / Chrome
 
 ### Steps
 
@@ -72,11 +70,9 @@ flutter pub get
 
 3. Run the app:
 
-**Web (Recommended for testing):**
+**Web (Easiest for testing):**
 ```bash
 flutter run -d chrome
-# or
-flutter run -d edge
 ```
 
 **Android:**
@@ -84,20 +80,15 @@ flutter run -d edge
 flutter run
 ```
 
-**Windows:**
-```bash
-flutter run -d windows
-```
-
 ## Body Fat Calculation
 
-The app uses the **US Navy Method** to estimate body fat percentage:
+Uses the **US Navy Method** to estimate body fat percentage:
 
 ```
 Body Fat % = 495 / (1.0324 - 0.19077 × (waist - neck) / 100 + 0.15456 × (height / 100)) - 450
 ```
 
-**Requirements:**
+**Required Measurements:**
 - Height (cm)
 - Neck circumference (cm) - measure at narrowest point
 - Waist circumference (cm) - measure at navel level
@@ -109,9 +100,9 @@ Body Fat % = 495 / (1.0324 - 0.19077 × (waist - neck) / 100 + 0.15456 × (heigh
 BMI = weight (kg) / (height (m))²
 ```
 
-## Testing Features
+## Testing Mode
 
-The app includes a **Testing Mode** (🐛 icon in app bar) that allows you to:
+The 🐛 icon in the app bar opens Testing Mode where you can:
 - Simulate different dates
 - Manually set sleep duration
 - Test app functionality without waiting for real-time data
@@ -122,71 +113,17 @@ The app includes a **Testing Mode** (🐛 icon in app bar) that allows you to:
 lib/
 ├── main.dart                 # App entry point
 ├── models/                   # Hive data models
-│   ├── daily_log.dart
-│   ├── exercise.dart
-│   ├── workout_day.dart
-│   ├── user_stats.dart
-│   └── completed_workout.dart
 ├── providers/                # Riverpod providers
-│   ├── daily_log_provider.dart
-│   ├── user_stats_provider.dart
-│   ├── workout_provider.dart
-│   └── sleep_provider.dart
-├── screens/                  # UI screens
-│   ├── home_screen.dart
-│   ├── exercise_screen.dart
-│   ├── history_screen.dart
-│   ├── progress_screen.dart
-│   └── gallery_screen.dart
+├── screens/                  # UI screens (Home, Exercise, History, Progress, Gallery)
 ├── services/                 # Business logic
-│   ├── hive_service.dart
-│   └── notification_service.dart
 ├── utils/                    # Utilities
-│   ├── theme.dart
-│   └── seed_data.dart
 └── widgets/                  # Reusable widgets
-    └── sleep_mode_overlay.dart
 ```
-
-## Screenshots
-
-*Screenshots will be added here*
-
-## Roadmap
-
-- [ ] Export data to CSV/PDF
-- [ ] Cloud backup/sync
-- [ ] Dark mode support
-- [ ] Widget support
-- [ ] Apple Health / Google Fit integration
-- [ ] Custom workout templates
-- [ ] Photo comparison tool
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License.
 
 ## Acknowledgments
 
-- Built with [Flutter](https://flutter.dev)
-- Charts powered by [fl_chart](https://pub.dev/packages/fl_chart)
-- Local storage by [Hive](https://pub.dev/packages/hive)
-- State management by [Riverpod](https://pub.dev/packages/riverpod)
-
-## Contact
-
-**Project Link:** [https://github.com/IfanFYS/project-physique](https://github.com/IfanFYS/project-physique)
+Built with [Flutter](https://flutter.dev), [Riverpod](https://pub.dev/packages/riverpod), [Hive](https://pub.dev/packages/hive), and [fl_chart](https://pub.dev/packages/fl_chart).
 
 ---
 
-Built with 💪 and Flutter
+Built with 💪 and Flutter by [IfanFYS](https://github.com/IfanFYS)
