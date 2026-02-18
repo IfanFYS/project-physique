@@ -34,7 +34,7 @@ final allDailyLogsProvider = AutoDisposeProvider<List<DailyLog>>.internal(
 );
 
 typedef AllDailyLogsRef = AutoDisposeProviderRef<List<DailyLog>>;
-String _$dailyLogNotifierHash() => r'59d6aa8ba01ec832af8a1e99a5fe911ee075bee6';
+String _$dailyLogNotifierHash() => r'6edde27a4cb0f7721c00df2bb97e3d102e66f681';
 
 /// Copied from Dart SDK
 class _SystemHash {

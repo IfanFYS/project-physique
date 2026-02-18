@@ -1,41 +1,35 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'user_stats.dart';
+part of 'calorie_entry.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class UserStatsAdapter extends TypeAdapter<UserStats> {
+class CalorieEntryAdapter extends TypeAdapter<CalorieEntry> {
   @override
-  final int typeId = 3;
+  final int typeId = 6;
 
   @override
-  UserStats read(BinaryReader reader) {
+  CalorieEntry read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return UserStats(
-      height: fields[0] as double?,
-      neck: fields[1] as double?,
-      waist: fields[2] as double?,
-      name: fields[3] as String?,
+    return CalorieEntry(
+      amount: fields[0] as int,
+      timestamp: fields[1] as DateTime,
     );
   }
 
   @override
-  void write(BinaryWriter writer, UserStats obj) {
+  void write(BinaryWriter writer, CalorieEntry obj) {
     writer
-      ..writeByte(4)
-      ..writeByte(0)
-      ..write(obj.height)
-      ..writeByte(1)
-      ..write(obj.neck)
       ..writeByte(2)
-      ..write(obj.waist)
-      ..writeByte(3)
-      ..write(obj.name);
+      ..writeByte(0)
+      ..write(obj.amount)
+      ..writeByte(1)
+      ..write(obj.timestamp);
   }
 
   @override
@@ -44,7 +38,7 @@ class UserStatsAdapter extends TypeAdapter<UserStats> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is UserStatsAdapter &&
+      other is CalorieEntryAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

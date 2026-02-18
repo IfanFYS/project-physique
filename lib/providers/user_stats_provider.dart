@@ -13,7 +13,7 @@ class UserStatsNotifier extends _$UserStatsNotifier {
     if (stats != null) {
       return stats;
     }
-    
+
     final newStats = UserStats();
     HiveService.userStats.put('current', newStats);
     return newStats;
@@ -33,6 +33,28 @@ class UserStatsNotifier extends _$UserStatsNotifier {
 
   Future<void> updateWaist(double waist) async {
     final stats = state.copyWith(waist: waist);
+    await HiveService.userStats.put('current', stats);
+    state = stats;
+  }
+
+  Future<void> updateName(String name) async {
+    final stats = state.copyWith(name: name);
+    await HiveService.userStats.put('current', stats);
+    state = stats;
+  }
+
+  Future<void> updateMeasurements({
+    double? height,
+    double? neck,
+    double? waist,
+    String? name,
+  }) async {
+    final stats = state.copyWith(
+      height: height,
+      neck: neck,
+      waist: waist,
+      name: name ?? state.name,
+    );
     await HiveService.userStats.put('current', stats);
     state = stats;
   }

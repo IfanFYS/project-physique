@@ -28,6 +28,7 @@ class HiveService {
     Hive.registerAdapter(UserStatsAdapter());
     Hive.registerAdapter(CompletedWorkoutAdapter());
     Hive.registerAdapter(CompletedExerciseAdapter());
+    Hive.registerAdapter(CalorieEntryAdapter());
 
     // Create photos directory only on mobile platforms
     if (!kIsWeb) {
@@ -45,7 +46,9 @@ class HiveService {
     _dailyLogs = await Hive.openBox<DailyLog>(dailyLogsBox);
     _workoutDays = await Hive.openBox<WorkoutDay>(workoutDaysBox);
     _userStats = await Hive.openBox<UserStats>(userStatsBox);
-    _completedWorkouts = await Hive.openBox<CompletedWorkout>(completedWorkoutsBox);
+    _completedWorkouts = await Hive.openBox<CompletedWorkout>(
+      completedWorkoutsBox,
+    );
     _appSettings = await Hive.openBox<dynamic>(appSettingsBox);
 
     await _seedInitialData();
@@ -54,14 +57,27 @@ class HiveService {
 
   static Future<void> _seedInitialData() async {
     final hasSeeded = _appSettings.get('hasSeededData') ?? false;
-    
+
     if (!hasSeeded && _workoutDays.isEmpty) {
+      // Seed workout days
       final seedData = SeedData.getInitialWorkoutDays();
-      
+
       for (final day in seedData) {
         await _workoutDays.put(day.id, day);
       }
-      
+
+      // Seed dummy daily logs with calories and sleep data
+      final dummyLogs = SeedData.getDummyDailyLogs();
+      for (final log in dummyLogs) {
+        await _dailyLogs.put(log.date, log);
+      }
+
+      // Seed dummy completed workouts
+      final dummyWorkouts = SeedData.getDummyCompletedWorkouts(seedData);
+      for (final workout in dummyWorkouts) {
+        await _completedWorkouts.put(workout.id, workout);
+      }
+
       await _appSettings.put('hasSeededData', true);
     }
   }

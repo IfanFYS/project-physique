@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'services/hive_service.dart';
+import 'providers/providers.dart';
 import 'utils/theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/exercise_screen.dart';
@@ -11,19 +12,15 @@ import 'widgets/sleep_mode_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     await HiveService.initialize();
-    
-    runApp(
-      const ProviderScope(
-        child: MyApp(),
-      ),
-    );
+
+    runApp(const ProviderScope(child: MyApp()));
   } catch (e, stackTrace) {
     print('Error initializing app: $e');
     print('Stack trace: $stackTrace');
-    
+
     // Run error app instead
     runApp(
       MaterialApp(
@@ -73,16 +70,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MainNavigationScreen extends StatefulWidget {
+class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
 
   @override
-  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+  ConsumerState<MainNavigationScreen> createState() =>
+      _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _currentIndex = 0;
-
+class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   final List<Widget> _screens = const [
     HomeScreen(),
     ExerciseScreen(),
@@ -93,15 +89,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = ref.watch(navigationNotifierProvider);
+
     return SleepModeOverlay(
       child: Scaffold(
-        body: _screens[_currentIndex],
+        body: _screens[currentIndex],
         bottomNavigationBar: NavigationBar(
-          selectedIndex: _currentIndex,
+          selectedIndex: currentIndex,
           onDestinationSelected: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
+            ref.read(navigationNotifierProvider.notifier).setTab(index);
           },
           destinations: const [
             NavigationDestination(

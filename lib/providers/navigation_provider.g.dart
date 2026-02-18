@@ -1,26 +1,27 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'user_stats_provider.dart';
+part of 'navigation_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$userStatsNotifierHash() => r'57c14cca017f25d26bb74d3b94abc2c4dc54a594';
+String _$navigationNotifierHash() =>
+    r'588cd1d8a90da4fb8d6da2ac78ea005de11bdc55';
 
-/// See also [UserStatsNotifier].
-@ProviderFor(UserStatsNotifier)
-final userStatsNotifierProvider =
-    AutoDisposeNotifierProvider<UserStatsNotifier, UserStats>.internal(
-  UserStatsNotifier.new,
-  name: r'userStatsNotifierProvider',
+/// See also [NavigationNotifier].
+@ProviderFor(NavigationNotifier)
+final navigationNotifierProvider =
+    AutoDisposeNotifierProvider<NavigationNotifier, int>.internal(
+  NavigationNotifier.new,
+  name: r'navigationNotifierProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$userStatsNotifierHash,
+      : _$navigationNotifierHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$UserStatsNotifier = AutoDisposeNotifier<UserStats>;
+typedef _$NavigationNotifier = AutoDisposeNotifier<int>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

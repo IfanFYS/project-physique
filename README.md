@@ -120,7 +120,7 @@ lib/
 └── widgets/                  # Reusable widgets
 ```
 
-## Acknowledgments
+## Acknowledgmentsz
 
 Built with [Flutter](https://flutter.dev), [Riverpod](https://pub.dev/packages/riverpod), [Hive](https://pub.dev/packages/hive), and [fl_chart](https://pub.dev/packages/fl_chart).
 

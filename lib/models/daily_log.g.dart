@@ -22,13 +22,16 @@ class DailyLogAdapter extends TypeAdapter<DailyLog> {
       calories: fields[2] as int,
       sleepDuration: fields[3] as int?,
       photoPath: fields[4] as String?,
+      calorieEntries: (fields[5] as List?)?.cast<CalorieEntry>(),
+      neck: fields[6] as double?,
+      waist: fields[7] as double?,
     );
   }
 
   @override
   void write(BinaryWriter writer, DailyLog obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.date)
       ..writeByte(1)
@@ -38,7 +41,13 @@ class DailyLogAdapter extends TypeAdapter<DailyLog> {
       ..writeByte(3)
       ..write(obj.sleepDuration)
       ..writeByte(4)
-      ..write(obj.photoPath);
+      ..write(obj.photoPath)
+      ..writeByte(5)
+      ..write(obj.calorieEntries)
+      ..writeByte(6)
+      ..write(obj.neck)
+      ..writeByte(7)
+      ..write(obj.waist);
   }
 
   @override
