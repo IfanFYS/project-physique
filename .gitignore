@@ -44,5 +44,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Agent notes (internal documentation)
-AGENTS.md
+# Agent skills and internal agent configuration (do not push)
+.agents/

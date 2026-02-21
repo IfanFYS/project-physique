@@ -5,7 +5,6 @@ import 'dart:math' as math;
 import '../providers/providers.dart';
 import '../models/models.dart';
 import '../utils/theme.dart';
-import '../widgets/sleep_mode_overlay.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +15,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime _selectedDate = DateTime.now();
+  final TextEditingController _calorieController = TextEditingController();
+
+  @override
+  void dispose() {
+    _calorieController.dispose();
+    super.dispose();
+  }
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -95,7 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
                     ),
                     Text(
-                      '${userStats.name ?? "Strong User"}!',
+                      '${userStats.name?.isNotEmpty == true ? userStats.name : 'Athlete'}! 💪',
                       style: Theme.of(context).textTheme.displayMedium
                           ?.copyWith(
                             fontWeight: FontWeight.bold,
@@ -105,7 +111,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              // Past-day viewing banner
+              if (dateString != DateFormat('yyyy-MM-dd').format(DateTime.now()))
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.warningColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppTheme.warningColor.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.history,
+                        color: AppTheme.warningColor,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Viewing ${DateFormat('MMMM d, yyyy').format(_selectedDate)}',
+                          style: TextStyle(
+                            color: AppTheme.warningColor,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.warningColor,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _selectedDate = DateTime.now();
+                          });
+                        },
+                        child: const Text(
+                          'Back to Today',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               _buildStatsSection(context, ref, todayLog, userStats),
               const SizedBox(height: 24),
               _buildCalorieTracker(context, ref, todayLog),
@@ -353,7 +415,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     WidgetRef ref,
     DailyLog log,
   ) {
-    final calorieController = TextEditingController();
     final todayString = DateFormat('yyyy-MM-dd').format(_selectedDate);
     final isStaticDay =
         todayString != DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -391,25 +452,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: calorieController,
+                    controller: _calorieController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      hintText: 'Add calories',
-                      prefixIcon: Icon(Icons.add),
+                    enabled: !isStaticDay,
+                    decoration: InputDecoration(
+                      hintText: isStaticDay
+                          ? 'Read-only (past day)'
+                          : 'Add calories (kcal)',
+                      prefixIcon: const Icon(Icons.add),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
-                  onPressed: () {
-                    final calories = int.tryParse(calorieController.text);
-                    if (calories != null && calories > 0) {
-                      ref
-                          .read(dailyLogNotifierProvider(todayString).notifier)
-                          .addCalories(calories);
-                      calorieController.clear();
-                    }
-                  },
+                  onPressed: isStaticDay
+                      ? null
+                      : () {
+                          final calories = int.tryParse(
+                            _calorieController.text,
+                          );
+                          if (calories != null && calories > 0) {
+                            ref
+                                .read(
+                                  dailyLogNotifierProvider(
+                                    todayString,
+                                  ).notifier,
+                                )
+                                .addCalories(calories);
+                            _calorieController.clear();
+                          }
+                        },
                   child: const Text('Add'),
                 ),
               ],
@@ -457,10 +529,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildSleepTracker(BuildContext context, WidgetRef ref, DailyLog log) {
-    final sleepHours = log.sleepDuration != null ? log.sleepDuration! ~/ 60 : 0;
-    final sleepMinutes = log.sleepDuration != null
-        ? log.sleepDuration! % 60
-        : 0;
+    final hasSleep = log.sleepDuration != null && log.sleepDuration! > 0;
+    final sleepHours = hasSleep ? log.sleepDuration! ~/ 60 : 0;
+    final sleepMinutes = hasSleep ? log.sleepDuration! % 60 : 0;
     final isSleepMode = ref.watch(sleepModeNotifierProvider).isActive;
 
     return Card(
@@ -504,22 +575,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildSleepMetric(
-                  context,
-                  value: sleepHours.toString().padLeft(2, '0'),
-                  label: 'Hours',
+            if (isSleepMode)
+              Center(
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.nightlight,
+                      size: 36,
+                      color: Colors.indigo,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sleep mode is active…',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.indigo,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(':', style: Theme.of(context).textTheme.displayMedium),
-                _buildSleepMetric(
-                  context,
-                  value: sleepMinutes.toString().padLeft(2, '0'),
-                  label: 'Minutes',
+              )
+            else if (hasSleep)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildSleepMetric(
+                    context,
+                    value: sleepHours.toString().padLeft(2, '0'),
+                    label: 'Hours',
+                  ),
+                  Text(':', style: Theme.of(context).textTheme.displayMedium),
+                  _buildSleepMetric(
+                    context,
+                    value: sleepMinutes.toString().padLeft(2, '0'),
+                    label: 'Minutes',
+                  ),
+                ],
+              )
+            else
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Tap "Go to Sleep" to start tracking your sleep tonight.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[500],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
           ],
         ),
       ),

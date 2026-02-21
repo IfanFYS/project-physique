@@ -88,13 +88,11 @@ class HiveService {
     final lastCheckDate = _appSettings.get('lastCheckDate') as String?;
 
     if (lastCheckDate != today) {
+      // Only create a blank log for today if one doesn't already exist
       final existingLog = _dailyLogs.get(today);
       if (existingLog == null) {
         final newLog = DailyLog(date: today, calories: 0);
         await _dailyLogs.put(today, newLog);
-      } else if (_formatDate(now) != lastCheckDate) {
-        existingLog.calories = 0;
-        await existingLog.save();
       }
 
       await _appSettings.put('lastCheckDate', today);

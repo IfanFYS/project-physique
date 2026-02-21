@@ -153,9 +153,8 @@ class SleepModeOverlay extends ConsumerWidget {
 
               if (duration != null) {
                 final now = DateTime.now();
-                final yesterday = now.subtract(const Duration(days: 1));
                 final dateString =
-                    '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+                    '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
                 ref
                     .read(dailyLogNotifierProvider(dateString).notifier)

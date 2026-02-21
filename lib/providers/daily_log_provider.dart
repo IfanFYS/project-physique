@@ -23,18 +23,21 @@ class DailyLogNotifier extends _$DailyLogNotifier {
     final log = state.copyWith(weight: weight);
     await HiveService.dailyLogs.put(date, log);
     state = log;
+    ref.read(allDailyLogsNotifierProvider.notifier).refresh();
   }
 
   Future<void> updateNeck(double neck) async {
     final log = state.copyWith(neck: neck);
     await HiveService.dailyLogs.put(date, log);
     state = log;
+    ref.read(allDailyLogsNotifierProvider.notifier).refresh();
   }
 
   Future<void> updateWaist(double waist) async {
     final log = state.copyWith(waist: waist);
     await HiveService.dailyLogs.put(date, log);
     state = log;
+    ref.read(allDailyLogsNotifierProvider.notifier).refresh();
   }
 
   Future<void> addCalories(int calories) async {
@@ -48,6 +51,7 @@ class DailyLogNotifier extends _$DailyLogNotifier {
     );
     await HiveService.dailyLogs.put(date, log);
     state = log;
+    ref.read(allDailyLogsNotifierProvider.notifier).refresh();
   }
 
   Future<void> removeCalorieEntry(int index) async {
@@ -64,18 +68,21 @@ class DailyLogNotifier extends _$DailyLogNotifier {
     );
     await HiveService.dailyLogs.put(date, log);
     state = log;
+    ref.read(allDailyLogsNotifierProvider.notifier).refresh();
   }
 
   Future<void> setSleepDuration(int minutes) async {
     final log = state.copyWith(sleepDuration: minutes);
     await HiveService.dailyLogs.put(date, log);
     state = log;
+    ref.read(allDailyLogsNotifierProvider.notifier).refresh();
   }
 
   Future<void> setPhotoPath(String? path) async {
     final log = state.copyWith(photoPath: path);
     await HiveService.dailyLogs.put(date, log);
     state = log;
+    ref.read(allDailyLogsNotifierProvider.notifier).refresh();
   }
 }
 
@@ -87,8 +94,27 @@ DailyLog todayLog(Ref ref) {
   return ref.watch(dailyLogNotifierProvider(date));
 }
 
+/// A reactive Notifier for the full sorted list of daily logs.
+/// Screens that show history or charts watch this to stay up-to-date.
+class _AllDailyLogsNotifier extends Notifier<List<DailyLog>> {
+  @override
+  List<DailyLog> build() => _load();
+
+  List<DailyLog> _load() {
+    return HiveService.dailyLogs.values.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  void refresh() => state = _load();
+}
+
+final allDailyLogsNotifierProvider =
+    NotifierProvider<_AllDailyLogsNotifier, List<DailyLog>>(
+      _AllDailyLogsNotifier.new,
+    );
+
+// Kept for backward compatibility with existing screens.
 @riverpod
 List<DailyLog> allDailyLogs(Ref ref) {
-  return HiveService.dailyLogs.values.toList()
-    ..sort((a, b) => b.date.compareTo(a.date));
+  return ref.watch(allDailyLogsNotifierProvider);
 }

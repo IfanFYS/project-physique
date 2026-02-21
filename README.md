@@ -30,16 +30,21 @@ A personal fitness tracking app built with Flutter to monitor workouts, track bo
   - Weight progression
   - Calorie intake
   - Workout frequency
+  - Body measurements (Neck & Waist)
+  - Sleep quality
+- **Advanced Controls**:
+  - Zoom and Pan support in charts
+  - Quick range selector (7d, 14d, 30d, All)
+  - Target line feature for weight goals
 - **Body Composition**: Automatic BMI and Body Fat % calculation (Navy Method)
 - **Historical Data**: Track changes over time
 
 ### 📸 Gallery
 - **Progress Photos**: Take daily photos to track visual changes
 - **Photo Timeline**: Browse through transformation journey
-
-### 😴 Sleep Mode
-- **Sleep Tracking**: Activate sleep mode to track rest duration
-- **Testing Mode**: Debug feature to simulate different dates and sleep values (🐛 icon in app bar)
+- **Photo Overlays**: High-detail stats (Weight, BMI, BFP) displayed on photo cards
+- **Transformation Mode**: Scrubber to visually compare progress over time with stat overlays
+- **Per-Day Precision**: Body fat calculation uses specific neck/waist measurements from the log if available.
 
 ## Tech Stack
 

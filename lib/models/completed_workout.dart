@@ -1,5 +1,4 @@
 import 'package:hive/hive.dart';
-import 'exercise.dart';
 
 part 'completed_workout.g.dart';
 

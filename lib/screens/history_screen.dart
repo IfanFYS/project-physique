@@ -22,8 +22,14 @@ class HistoryScreen extends ConsumerWidget {
     }.toList()..sort((a, b) => b.compareTo(a));
 
     // For UI checking, if empty, show some dummy dates
+    final now = DateTime.now();
+    final fmt = DateFormat('yyyy-MM-dd');
     final displayDates = allDates.isEmpty
-        ? ['2026-02-02', '2026-02-01', '2026-01-31']
+        ? [
+            fmt.format(now),
+            fmt.format(now.subtract(const Duration(days: 1))),
+            fmt.format(now.subtract(const Duration(days: 2))),
+          ]
         : allDates;
 
     return Scaffold(
@@ -240,7 +246,7 @@ class HistoryScreen extends ConsumerWidget {
                       _buildMiniMetric(
                         context,
                         'Neck/Waist',
-                        '${log.neck ?? "-"} / ${log.waist ?? "-"} cm',
+                        '${log.neck != null ? log.neck!.toStringAsFixed(1) : "-"} / ${log.waist != null ? log.waist!.toStringAsFixed(1) : "-"} cm',
                       ),
                     ],
                   ),

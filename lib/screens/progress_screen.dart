@@ -18,6 +18,25 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
   bool _showNeck = true;
   bool _showWaist = true;
 
+  // Timeframe: how many days to show (null = all)
+  int? _timeframeDays = 14;
+
+  // Target line per chart index
+  final List<double?> _targetValues = [null, null, null, null, null];
+  final List<bool> _showTarget = [false, false, false, false, false];
+  final List<TextEditingController> _targetControllers = List.generate(
+    5,
+    (_) => TextEditingController(),
+  );
+
+  @override
+  void dispose() {
+    for (final c in _targetControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final allLogs = ref.watch(allDailyLogsProvider);
@@ -206,6 +225,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
             child: ChoiceChip(
               label: Text(entry.value),
               selected: isSelected,
+              showCheckmark: false,
               onSelected: (selected) {
                 if (selected) {
                   setState(() {
@@ -214,7 +234,10 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                 }
               },
               selectedColor: AppTheme.primaryColor,
-              labelStyle: TextStyle(color: isSelected ? Colors.white : null),
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : null,
+                fontWeight: isSelected ? FontWeight.bold : null,
+              ),
             ),
           );
         }).toList(),
@@ -227,12 +250,16 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     List<DailyLog> logs,
     List<CompletedWorkout> workouts,
   ) {
-    // Sort logs by date to ensure correct order
+    final ci = _selectedChartIndex;
+
+    // Sort by date ascending
     final sortedLogs = List<DailyLog>.from(logs)
       ..sort((a, b) => a.date.compareTo(b.date));
-    // Limit to last 14 days
-    final displayLogs = sortedLogs.length > 14
-        ? sortedLogs.sublist(sortedLogs.length - 14)
+
+    // Apply timeframe
+    final displayLogs =
+        (_timeframeDays != null && sortedLogs.length > _timeframeDays!)
+        ? sortedLogs.sublist(sortedLogs.length - _timeframeDays!)
         : sortedLogs;
 
     List<LineChartBarData> lineBarsData = [];
@@ -240,15 +267,13 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     double maxY = 100;
     double minY = 0;
 
-    switch (_selectedChartIndex) {
+    switch (ci) {
       case 0: // Weight
         final spots = displayLogs
             .asMap()
             .entries
             .where((e) => e.value.weight != null)
-            .map((entry) {
-              return FlSpot(entry.key.toDouble(), entry.value.weight!);
-            })
+            .map((entry) => FlSpot(entry.key.toDouble(), entry.value.weight!))
             .toList();
         yAxisLabel = 'kg';
         final weights = displayLogs
@@ -276,12 +301,16 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
         );
         break;
       case 1: // Calories
-        final spots = displayLogs.asMap().entries.map((entry) {
-          return FlSpot(entry.key.toDouble(), entry.value.calories.toDouble());
-        }).toList();
+        final spots = displayLogs
+            .asMap()
+            .entries
+            .map((e) => FlSpot(e.key.toDouble(), e.value.calories.toDouble()))
+            .toList();
         yAxisLabel = 'kcal';
         final calories = displayLogs.map((l) => l.calories.toDouble()).toList();
-        maxY = calories.reduce((a, b) => a > b ? a : b) + 200;
+        maxY = calories.isNotEmpty
+            ? calories.reduce((a, b) => a > b ? a : b) + 200
+            : 500;
         minY = 0;
         lineBarsData.add(
           LineChartBarData(
@@ -304,7 +333,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
               .length;
           return FlSpot(entry.key.toDouble(), count.toDouble());
         }).toList();
-        yAxisLabel = 'count';
+        yAxisLabel = 'sessions';
         maxY = 5;
         minY = 0;
         lineBarsData.add(
@@ -317,15 +346,13 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
           ),
         );
         break;
-      case 3: // Measurements (Neck & Waist)
+      case 3: // Measurements
         if (_showNeck) {
           final neckSpots = displayLogs
               .asMap()
               .entries
               .where((e) => e.value.neck != null)
-              .map((entry) {
-                return FlSpot(entry.key.toDouble(), entry.value.neck!);
-              })
+              .map((e) => FlSpot(e.key.toDouble(), e.value.neck!))
               .toList();
           lineBarsData.add(
             LineChartBarData(
@@ -342,9 +369,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
               .asMap()
               .entries
               .where((e) => e.value.waist != null)
-              .map((entry) {
-                return FlSpot(entry.key.toDouble(), entry.value.waist!);
-              })
+              .map((e) => FlSpot(e.key.toDouble(), e.value.waist!))
               .toList();
           lineBarsData.add(
             LineChartBarData(
@@ -373,12 +398,14 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
             : 0;
         break;
       case 4: // Sleep
-        final spots = displayLogs.asMap().entries.map((entry) {
-          return FlSpot(
-            entry.key.toDouble(),
-            (entry.value.sleepDuration ?? 0) / 60.0,
-          );
-        }).toList();
+        final spots = displayLogs
+            .asMap()
+            .entries
+            .map(
+              (e) =>
+                  FlSpot(e.key.toDouble(), (e.value.sleepDuration ?? 0) / 60.0),
+            )
+            .toList();
         yAxisLabel = 'hours';
         maxY = 12;
         minY = 0;
@@ -398,121 +425,342 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
         break;
     }
 
+    // Target line
+    final targetVal = _targetValues[ci];
+    final showTargetLine =
+        _showTarget[ci] &&
+        targetVal != null &&
+        targetVal >= minY &&
+        targetVal <= maxY;
+
+    final extraLines = showTargetLine
+        ? ExtraLinesData(
+            horizontalLines: [
+              HorizontalLine(
+                y: targetVal,
+                color: Colors.red.withOpacity(0.7),
+                strokeWidth: 1.5,
+                dashArray: [6, 4],
+                label: HorizontalLineLabel(
+                  show: true,
+                  alignment: Alignment.topRight,
+                  padding: const EdgeInsets.only(right: 8, bottom: 4),
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  labelResolver: (line) =>
+                      'Target: ${line.y.toStringAsFixed(1)} $yAxisLabel',
+                ),
+              ),
+            ],
+          )
+        : null;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Title row + Timeframe Selector ──────────────────────────
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  _getChartTitle(),
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    _getChartTitle(),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
-                if (_selectedChartIndex == 3)
-                  Row(
+                // Compact Timeframe Selector
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildToggle(
-                        'Neck',
-                        Colors.blue,
-                        _showNeck,
-                        (v) => setState(() => _showNeck = v),
+                      ...[
+                        ['7d', 7],
+                        ['14d', 14],
+                        ['30d', 30],
+                        ['All', null],
+                      ].map((opt) {
+                        final label = opt[0] as String;
+                        final days = opt[1] as int?;
+                        final isSelected = _timeframeDays == days;
+                        return GestureDetector(
+                          onTap: () => setState(() => _timeframeDays = days),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppTheme.primaryColor
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: AppTheme.primaryColor
+                                            .withOpacity(0.3),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // ── Neck/Waist toggles (if measurements) ─────────────────────
+            if (ci == 3) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _buildToggle(
+                    'Neck',
+                    Colors.blue,
+                    _showNeck,
+                    (v) => setState(() => _showNeck = v),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildToggle(
+                    'Waist',
+                    Colors.green,
+                    _showWaist,
+                    (v) => setState(() => _showWaist = v),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+            const SizedBox(height: 8),
+
+            // ── Target line toggle + input ────────────────────────────────
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _showTarget[ci] = !_showTarget[ci]),
+                  child: Row(
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 32,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(9),
+                          color: _showTarget[ci]
+                              ? Colors.red.shade400
+                              : Colors.grey.shade300,
+                        ),
+                        child: AnimatedAlign(
+                          duration: const Duration(milliseconds: 200),
+                          alignment: _showTarget[ci]
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      _buildToggle(
-                        'Waist',
-                        Colors.green,
-                        _showWaist,
-                        (v) => setState(() => _showWaist = v),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Target line',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _showTarget[ci]
+                              ? Colors.red.shade400
+                              : Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
+                ),
+                if (_showTarget[ci]) ...[
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 80,
+                    height: 30,
+                    child: TextField(
+                      controller: _targetControllers[ci],
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: const TextStyle(fontSize: 12),
+                      decoration: InputDecoration(
+                        hintText: yAxisLabel,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        isDense: true,
+                      ),
+                      onChanged: (v) {
+                        setState(() {
+                          _targetValues[ci] = double.tryParse(v);
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    yAxisLabel,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // ── Chart ────────────────────────────────────────────────────
             SizedBox(
-              height: 280,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: Colors.grey.withOpacity(0.1),
-                      strokeWidth: 1,
-                    ),
-                    getDrawingVerticalLine: (value) => FlLine(
-                      color: Colors.grey.withOpacity(0.1),
-                      strokeWidth: 1,
-                    ),
+              height: 260,
+              child: InteractiveViewer(
+                clipBehavior: Clip.none,
+                minScale: 1.0,
+                maxScale: 4.0,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    right: 20,
+                    left: 4,
+                    top: 10,
+                    bottom: 4,
                   ),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        getTitlesWidget: (value, meta) => Text(
-                          value.toStringAsFixed(1),
-                          style: const TextStyle(fontSize: 10),
-                        ),
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 50,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index >= 0 && index < displayLogs.length) {
-                            final date = DateTime.parse(
-                              displayLogs[index].date,
-                            );
-                            return SideTitleWidget(
-                              axisSide: meta.axisSide,
-                              angle: -0.8,
-                              space: 12,
-                              child: Text(
-                                DateFormat('dd/MM/yy').format(date),
-                                style: const TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            );
-                          }
-                          return const SizedBox.shrink();
+                  child: LineChart(
+                    LineChartData(
+                      extraLinesData: extraLines,
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: true,
+                        horizontalInterval: 1,
+                        verticalInterval: 1,
+                        getDrawingHorizontalLine: (value) {
+                          return FlLine(
+                            color: Colors.grey.withOpacity(0.1),
+                            strokeWidth: 1,
+                          );
+                        },
+                        getDrawingVerticalLine: (value) {
+                          return FlLine(
+                            color: Colors.grey.withOpacity(0.1),
+                            strokeWidth: 1,
+                          );
                         },
                       ),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  minY: minY,
-                  maxY: maxY,
-                  lineBarsData: lineBarsData,
-                  lineTouchData: LineTouchData(
-                    touchTooltipData: LineTouchTooltipData(
-                      getTooltipItems: (touchedSpots) {
-                        return touchedSpots.map((spot) {
-                          return LineTooltipItem(
-                            '${spot.y.toStringAsFixed(1)} $yAxisLabel',
-                            const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          );
-                        }).toList();
-                      },
+                      titlesData: FlTitlesData(
+                        show: true,
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 32,
+                            interval: (displayLogs.length / 5)
+                                .clamp(1, 100)
+                                .toDouble(),
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index >= 0 && index < displayLogs.length) {
+                                final date = DateTime.parse(
+                                  displayLogs[index].date,
+                                );
+                                return SideTitleWidget(
+                                  axisSide: meta.axisSide,
+                                  space: 8,
+                                  child: Text(
+                                    DateFormat('dd/MM').format(date),
+                                    style: const TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                value.toStringAsFixed(0),
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 10,
+                                ),
+                              );
+                            },
+                            reservedSize: 28,
+                          ),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      minY: minY,
+                      maxY: maxY,
+                      lineBarsData: lineBarsData,
+                      lineTouchData: LineTouchData(
+                        enabled: true,
+                        handleBuiltInTouches: true,
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              return LineTooltipItem(
+                                '${spot.y.toStringAsFixed(1)} $yAxisLabel',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ),

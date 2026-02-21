@@ -42,23 +42,29 @@ class DailyLog extends HiveObject {
 
   DailyLog copyWith({
     String? date,
-    double? weight,
+    Object? weight = _sentinel,
     int? calories,
-    int? sleepDuration,
-    String? photoPath,
-    List<CalorieEntry>? calorieEntries,
-    double? neck,
-    double? waist,
+    Object? sleepDuration = _sentinel,
+    Object? photoPath = _sentinel,
+    Object? calorieEntries = _sentinel,
+    Object? neck = _sentinel,
+    Object? waist = _sentinel,
   }) {
     return DailyLog(
       date: date ?? this.date,
-      weight: weight ?? this.weight,
+      weight: weight == _sentinel ? this.weight : weight as double?,
       calories: calories ?? this.calories,
-      sleepDuration: sleepDuration ?? this.sleepDuration,
-      photoPath: photoPath ?? this.photoPath,
-      calorieEntries: calorieEntries ?? this.calorieEntries,
-      neck: neck ?? this.neck,
-      waist: waist ?? this.waist,
+      sleepDuration: sleepDuration == _sentinel
+          ? this.sleepDuration
+          : sleepDuration as int?,
+      photoPath: photoPath == _sentinel ? this.photoPath : photoPath as String?,
+      calorieEntries: calorieEntries == _sentinel
+          ? this.calorieEntries
+          : calorieEntries as List<CalorieEntry>?,
+      neck: neck == _sentinel ? this.neck : neck as double?,
+      waist: waist == _sentinel ? this.waist : waist as double?,
     );
   }
 }
+
+const _sentinel = Object();
